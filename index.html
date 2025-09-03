@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>제로 투 원: 핵심 인사이트</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals -->
+    <!-- Application Structure Plan: 이 SPA는 피터 틸의 '제로 투 원' 핵심 사상을 주제별로 탐색할 수 있도록 설계되었습니다. 사용자는 상단 네비게이션을 통해 원하는 주제로 바로 이동하거나, 스크롤을 통해 자연스럽게 내용을 따라갈 수 있습니다. 각 섹션은 '0 to 1'의 기본 개념, 독점 기업의 조건, 스타트업의 구성 요소, 분배의 중요성 등 핵심 주제를 중심으로 구성되어 있습니다. 각 주제는 카드 뒤집기, 다이어그램 상호작용, 차트 시각화 등 동적인 요소를 활용하여 사용자의 참여와 이해를 극대화하는 것을 목표로 합니다. 이는 책의 목차를 그대로 따르기보다, 핵심 개념을 유기적으로 연결하여 더 깊은 통찰을 제공하기 위한 구조입니다. -->
+    <!-- Visualization & Content Choices: 
+        1. '0 to 1' vs '1 to n' 비교 -> 목표: 핵심 개념 대조 및 정보 전달 -> 표현: 양쪽으로 나뉜 텍스트 블록과 시각적 아이콘 -> 상호작용: 없음, 명확한 시각적 대비에 집중 -> 근거: 책의 가장 중요한 기본 전제를 사용자에게 즉시 각인시키기 위함입니다.
+        2. 독점 기업의 7가지 질문 -> 목표: 정보 조직화 및 탐색 -> 표현: 7개의 질문이 담긴 카드 그리드 -> 상호작용: 카드 클릭 시, 상세 설명이 나타나는 뒤집기 애니메이션 -> 근거: 중요한 체크리스트를 지루하지 않고 능동적으로 탐색하게 만드는 효과적인 방법입니다.
+        3. 0 to 1 스타트업의 구성 요소 -> 목표: 개념 간의 관계 시각화 -> 표현: HTML/CSS로 구현된 다이어그램 (기초, 비밀, 팀) -> 상호작용: 각 구성 요소 클릭 시, 우측에 해당 설명이 동적으로 표시됨 -> 근거: 각 요소가 어떻게 유기적으로 연결되는지를 시각적으로 보여주어 복잡한 개념의 이해를 돕습니다.
+        4. 분배의 중요성 (차트) -> 목표: 데이터 비교 및 시각화 -> 표현: 고객 생애 가치(LTV)와 고객 획득 비용(CAC)을 비교하는 막대 차트 -> 상호작용: 버튼 클릭을 통해 여러 비즈니스 모델 예시(소비자, B2B)에 따른 차트 데이터 변경 -> 근거: 추상적인 비즈니스 지표를 구체적인 시각 자료로 보여주어 '분배'의 중요성을 직관적으로 전달합니다. Chart.js(Canvas)를 사용했습니다.
+        CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body { font-family: 'Noto Sans KR', sans-serif; scroll-behavior: smooth; }
+        .perspective { perspective: 1000px; }
+        .card-inner { transition: transform 0.6s; transform-style: preserve-3d; }
+        .card.flipped .card-inner { transform: rotateY(180deg); }
+        .card-front, .card-back { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+        .card-back { transform: rotateY(180deg); }
+        .active-nav { color: #0d9488; font-weight: 700; border-bottom: 2px solid #0d9488; }
+        .inactive-nav { color: #374151; }
+        .diagram-item.active { background-color: #ccfbf1; border-left-color: #14b8a6; }
+        .chart-container { position: relative; width: 100%; max-width: 600px; margin-left: auto; margin-right: auto; height: 350px; max-height: 400px; }
+        @media (min-width: 768px) { .chart-container { height: 400px; } }
+    </style>
+</head>
+<body class="bg-stone-50 text-stone-800">
+
+    <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-50 shadow-sm">
+        <nav class="max-w-6xl mx-auto px-4">
+            <div class="flex justify-between items-center h-16">
+                <h1 class="text-xl md:text-2xl font-bold text-teal-700">Zero to One</h1>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#introduction" class="text-sm font-medium inactive-nav transition-colors duration-300 hover:text-teal-600">핵심 개념</a>
+                    <a href="#monopoly" class="text-sm font-medium inactive-nav transition-colors duration-300 hover:text-teal-600">독점 기업</a>
+                    <a href="#startup" class="text-sm font-medium inactive-nav transition-colors duration-300 hover:text-teal-600">스타트업 설계</a>
+                    <a href="#distribution" class="text-sm font-medium inactive-nav transition-colors duration-300 hover:text-teal-600">분배의 법칙</a>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="max-w-6xl mx-auto p-4 md:p-8">
+
+        <section id="introduction" class="py-16 text-center">
+            <h2 class="text-3xl md:text-4xl font-bold mb-4">미래를 만드는 두 가지 방법</h2>
+            <p class="max-w-3xl mx-auto text-stone-600 mb-12">피터 틸은 미래를 향한 진보는 수평적 진보와 수직적 진보, 두 가지 형태로 나타난다고 말합니다. '제로 투 원'은 아무것도 없던 상태에서 새로운 것을 창조하는 '수직적 진보'에 대한 이야기입니다.</p>
+            <div class="grid md:grid-cols-2 gap-8 text-left">
+                <div class="bg-white p-8 rounded-xl shadow-lg border border-gray-100">
+                    <div class="flex items-center mb-4">
+                        <span class="text-5xl font-bold text-teal-500 mr-4">1 → n</span>
+                        <h3 class="text-2xl font-bold">수평적 진보 (확장)</h3>
+                    </div>
+                    <p class="text-stone-600">이미 효과가 입증된 것을 카피하는 것을 의미합니다. 하나의 아이디어를 1에서 n으로 확장하는 것이죠. 다른 말로 '세계화(Globalization)'라고도 합니다. 중국은 지난 수십 년간 서구의 모든 것들을 따라 하면서 폭발적인 성장을 이룬 수평적 진보의 대표적인 사례입니다.</p>
+                </div>
+                <div class="bg-white p-8 rounded-xl shadow-lg border border-gray-100">
+                    <div class="flex items-center mb-4">
+                         <span class="text-5xl font-bold text-sky-500 mr-4">0 → 1</span>
+                        <h3 class="text-2xl font-bold">수직적 진보 (창조)</h3>
+                    </div>
+                    <p class="text-stone-600">지금까지 해본 적 없는 새로운 일을 하는 것입니다. 0에서 1을 만들어내는 것이죠. 다른 말로 '기술(Technology)'이라고 합니다. 컴퓨터, 스마트폰처럼 이전에는 존재하지 않았던 새로운 기술을 만들어내는 것이 수직적 진보의 본질입니다.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="monopoly" class="py-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4">행복한 회사는 모두 다르다: 독점의 가치</h2>
+                <p class="max-w-3xl mx-auto text-stone-600">피터 틸은 '경쟁은 패자들의 게임'이라고 주장합니다. 경쟁은 이윤을 갉아먹고 생존에만 급급하게 만들 뿐입니다. 반면, 독점 기업은 경쟁에서 자유롭기에 장기적인 계획을 세우고, 더 나은 제품을 만들며, 직원들에게 더 나은 가치를 제공할 수 있습니다. 아래 7가지 질문을 통해 당신의 비즈니스가 독점적 잠재력을 가졌는지 확인해보세요.</p>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="perspective">
+                    <div class="card relative w-full h-64">
+                        <div class="card-inner absolute w-full h-full">
+                            <div class="card-front absolute w-full h-full bg-white rounded-lg shadow-md flex flex-col justify-center items-center p-4 text-center cursor-pointer border border-gray-200">
+                                <span class="text-3xl mb-2">⚙️</span>
+                                <h4 class="font-bold text-lg">1. 기술</h4>
+                                <p class="text-sm text-stone-500 mt-2">획기적인 기술을 가졌는가?</p>
+                            </div>
+                            <div class="card-back absolute w-full h-full bg-teal-50 rounded-lg shadow-md flex flex-col justify-center items-center p-4 text-center cursor-pointer">
+                                <p class="text-sm text-teal-800">당신의 기술이 기존 기술보다 '10배 이상' 뛰어난 해결책을 제공해야 합니다. 약간의 개선만으로는 사용자들이 기존의 습관을 바꾸기 어렵습니다. 10배의 개선은 명확한 우위를 제공하고 독점의 기반이 됩니다.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="perspective">
+                    <div class="card relative w-full h-64">
+                        <div class="card-inner absolute w-full h-full">
+                            <div class="card-front absolute w-full h-full bg-white rounded-lg shadow-md flex flex-col justify-center items-center p-4 text-center cursor-pointer border border-gray-200">
+                                <span class="text-3xl mb-2">⏱️</span>
+                                <h4 class="font-bold text-lg">2. 시점</h4>
+                                <p class="text-sm text-stone-500 mt-2">이 사업을 시작하기에 지금이 적기인가?</p>
+                            </div>
+                            <div class="card-back absolute w-full h-full bg-teal-50 rounded-lg shadow-md flex flex-col justify-center items-center p-4 text-center cursor-pointer">
+                                <p class="text-sm text-teal-800">시장이 너무 이르거나 늦지 않았는지 판단해야 합니다. 너무 이르면 시장이 형성되지 않았고, 너무 늦으면 경쟁이 치열합니다. 특정 기술이나 사회적 변화의 흐름을 타고 있는 '마지막 주자'가 될 수 있는 시점을 포착해야 합니다.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="perspective">
+                    <div class="card relative w-full h-64">
+                        <div class="card-inner absolute w-full h-full">
+                            <div class="card-front absolute w-full h-full bg-white rounded-lg shadow-md flex flex-col justify-center items-center p-4 text-center cursor-pointer border border-gray-200">
+                                <span class="text-3xl mb-2">🎯</span>
+                                <h4 class="font-bold text-lg">3. 독점</h4>
+                                <p class="text-sm text-stone-500 mt-2">작은 시장에서 높은 점유율을 차지하고 있는가?</p>
+                            </div>
+                            <div class="card-back absolute w-full h-full bg-teal-50 rounded-lg shadow-md flex flex-col justify-center items-center p-4 text-center cursor-pointer">
+                                <p class="text-sm text-teal-800">큰 시장의 1%를 차지하는 것보다, 작은 시장을 완전히 지배하는 것이 훨씬 낫습니다. 아주 구체적인 문제를 가진 소수의 고객 집단을 찾아 그들을 위한 완벽한 해결책을 제공하고, 그 시장을 기반으로 점차 확장해나가야 합니다.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="perspective">
+                    <div class="card relative w-full h-64">
+                        <div class="card-inner absolute w-full h-full">
+                            <div class="card-front absolute w-full h-full bg-white rounded-lg shadow-md flex flex-col justify-center items-center p-4 text-center cursor-pointer border border-gray-200">
+                                <span class="text-3xl mb-2">👥</span>
+                                <h4 class="font-bold text-lg">4. 사람</h4>
+                                <p class="text-sm text-stone-500 mt-2">제대로 된 팀을 갖추었는가?</p>
+                            </div>
+                            <div class="card-back absolute w-full h-full bg-teal-50 rounded-lg shadow-md flex flex-col justify-center items-center p-4 text-center cursor-pointer">
+                                <p class="text-sm text-teal-800">기술만큼이나 중요한 것이 팀입니다. 창업자는 비전을 제시하고 팀을 이끌어야 합니다. 팀원들은 기술적 역량뿐만 아니라, 함께 일하고 싶은 사람들이어야 합니다. 강력한 문화와 유대감은 회사의 핵심 경쟁력입니다.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="perspective">
+                    <div class="card relative w-full h-64">
+                        <div class="card-inner absolute w-full h-full">
+                            <div class="card-front absolute w-full h-full bg-white rounded-lg shadow-md flex flex-col justify-center items-center p-4 text-center cursor-pointer border border-gray-200">
+                                <span class="text-3xl mb-2">🚚</span>
+                                <h4 class="font-bold text-lg">5. 분배</h4>
+                                <p class="text-sm text-stone-500 mt-2">제품을 판매할 방법이 있는가?</p>
+                            </div>
+                            <div class="card-back absolute w-full h-full bg-teal-50 rounded-lg shadow-md flex flex-col justify-center items-center p-4 text-center cursor-pointer">
+                                <p class="text-sm text-teal-800">뛰어난 제품도 저절로 팔리지는 않습니다. 영업과 마케팅, 즉 '분배'는 제품만큼이나 중요합니다. 고객에게 제품을 전달할 효과적인 채널을 설계하고 실행해야 합니다. 많은 스타트업이 이를 간과하여 실패합니다.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="perspective">
+                    <div class="card relative w-full h-64">
+                        <div class="card-inner absolute w-full h-full">
+                            <div class="card-front absolute w-full h-full bg-white rounded-lg shadow-md flex flex-col justify-center items-center p-4 text-center cursor-pointer border border-gray-200">
+                                <span class="text-3xl mb-2">🛡️</span>
+                                <h4 class="font-bold text-lg">6. 내구성</h4>
+                                <p class="text-sm text-stone-500 mt-2">향후 10년, 20년간 살아남을 수 있는가?</p>
+                            </div>
+                            <div class="card-back absolute w-full h-full bg-teal-50 rounded-lg shadow-md flex flex-col justify-center items-center p-4 text-center cursor-pointer">
+                                <p class="text-sm text-teal-800">장기적인 현금 흐름을 창출할 수 있는지 자문해야 합니다. 브랜드, 네트워크 효과, 규모의 경제, 특허 등 경쟁자들이 쉽게 모방할 수 없는 강력한 해자(moat)를 구축하여 미래에도 시장 지배력을 유지해야 합니다.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="perspective">
+                    <div class="card relative w-full h-64">
+                        <div class="card-inner absolute w-full h-full">
+                            <div class="card-front absolute w-full h-full bg-white rounded-lg shadow-md flex flex-col justify-center items-center p-4 text-center cursor-pointer border border-gray-200">
+                                <span class="text-3xl mb-2">💎</span>
+                                <h4 class="font-bold text-lg">7. 비밀</h4>
+                                <p class="text-sm text-stone-500 mt-2">당신만 아는 특별한 기회를 포착했는가?</p>
+                            </div>
+                            <div class="card-back absolute w-full h-full bg-teal-50 rounded-lg shadow-md flex flex-col justify-center items-center p-4 text-center cursor-pointer">
+                                <p class="text-sm text-teal-800">훌륭한 기업은 남들이 보지 못하는 '비밀' 위에 세워집니다. 세상에는 아직 해결되지 않은 문제와 발견되지 않은 기회가 존재합니다. 남들이 당연하게 여기는 것에 의문을 품고, 그 이면에 숨겨진 진실을 찾아내야 합니다.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="startup" class="py-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4">0 to 1 스타트업 설계하기</h2>
+                <p class="max-w-3xl mx-auto text-stone-600">성공적인 스타트업은 운이 아니라 좋은 설계에서 나옵니다. 피터 틸은 특히 회사를 처음 세울 때의 결정이 미래를 좌우한다고 강조합니다. 세 가지 핵심 요소를 올바르게 설정하는 것이 중요합니다.</p>
+            </div>
+            <div class="flex flex-col md:flex-row gap-8">
+                <div class="md:w-1/3">
+                    <ul id="diagram-controls">
+                        <li data-content="foundations" class="diagram-item active p-4 border-l-4 border-teal-500 bg-teal-50 cursor-pointer transition-colors duration-300">
+                            <h4 class="font-bold text-lg">기초 (Foundations)</h4>
+                            <p class="text-sm text-stone-600">잘못된 시작은 고칠 수 없다.</p>
+                        </li>
+                        <li data-content="team" class="diagram-item p-4 border-l-4 border-gray-200 cursor-pointer transition-colors duration-300 hover:bg-gray-100">
+                            <h4 class="font-bold text-lg">팀 (The Mafia)</h4>
+                            <p class="text-sm text-stone-600">단순한 동료가 아닌 마피아를 만들어라.</p>
+                        </li>
+                        <li data-content="secrets" class="diagram-item p-4 border-l-4 border-gray-200 cursor-pointer transition-colors duration-300 hover:bg-gray-100">
+                            <h4 class="font-bold text-lg">비밀 (Secrets)</h4>
+                            <p class="text-sm text-stone-600">세상에는 아직 발견할 비밀이 남아있다.</p>
+                        </li>
+                    </ul>
+                </div>
+                <div class="md:w-2/3 bg-white p-8 rounded-lg shadow-md border border-gray-100 min-h-[300px]">
+                    <div id="diagram-content">
+                        
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="distribution" class="py-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4">만들기만 하면 팔릴까?: 분배의 법칙</h2>
+                <p class="max-w-3xl mx-auto text-stone-600">엔지니어들은 종종 훌륭한 제품은 저절로 팔린다고 믿지만, 이는 치명적인 착각입니다. 제품을 고객에게 전달하는 '분배'는 제품 개발만큼이나 중요합니다. 성공적인 비즈니스는 고객 획득 비용(CAC)보다 고객 생애 가치(LTV)가 훨씬 높아야 합니다. 아래 차트를 통해 비즈니스 모델별 분배 전략을 살펴보세요.</p>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-lg border border-gray-100">
+                <div class="text-center mb-6">
+                    <button id="consumer-btn" class="bg-teal-500 text-white px-4 py-2 rounded-md hover:bg-teal-600 transition-colors duration-300 mr-2">소비자 상품 모델</button>
+                    <button id="b2b-btn" class="bg-gray-300 text-stone-700 px-4 py-2 rounded-md hover:bg-gray-400 transition-colors duration-300">기업용 SaaS 모델</button>
+                </div>
+                <div class="chart-container">
+                    <canvas id="distributionChart"></canvas>
+                </div>
+                 <p id="chart-description" class="text-center text-sm text-stone-500 mt-4"></p>
+            </div>
+        </section>
+        
+    </main>
+    
+    <footer class="bg-stone-800 text-white py-8">
+        <div class="max-w-6xl mx-auto text-center">
+            <p class="text-stone-400">이 페이지는 피터 틸의 '제로 투 원'을 기반으로 제작된 교육용 프로젝트입니다.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            const cards = document.querySelectorAll('.card');
+            cards.forEach(card => {
+                card.addEventListener('click', () => {
+                    card.classList.toggle('flipped');
+                });
+            });
+
+            const diagramControls = document.getElementById('diagram-controls');
+            const diagramContentEl = document.getElementById('diagram-content');
+            
+            const contents = {
+                foundations: {
+                    title: "기초: 처음부터 제대로 설정하기",
+                    points: [
+                        "<strong>공동 창업자:</strong> 결혼과도 같다. 창업 이전에 깊은 관계와 신뢰가 쌓인 사람과 함께해야 한다. 기술과 비전뿐만 아니라 성격과 가치관의 궁합이 중요하다.",
+                        "<strong>소유권(Ownership):</strong> 누가 회사의 주인인가? 창업자, 직원, 투자자 간의 지분을 명확히 해야 한다. '소유권'은 실제 주식으로 정의된다.",
+                        "<strong>지배권(Possession):</strong> 누가 회사를 실제로 운영하는가? 이사회와 경영진의 역할과 권한을 명확히 해야 한다. 소유권과 지배권은 다를 수 있다.",
+                        "<strong>보상(Control):</strong> 모든 직원은 지분 형태로 회사의 성공에 동참해야 한다. 급여만으로는 장기적인 헌신을 이끌어내기 어렵다."
+                    ]
+                },
+                team: {
+                    title: "팀: 강력한 문화를 가진 '마피아' 만들기",
+                    points: [
+                        "<strong>채용 원칙:</strong> '왜 20번째 직원이 우리 회사에 합류해야 하는가?'에 답할 수 있어야 한다. 단순히 좋은 조건이 아니라, 회사의 중요한 미션과 훌륭한 동료들이 가장 강력한 유인책이다.",
+                        "<strong>모두가 특별해야 한다:</strong> 각 직원은 자신만의 고유한 역할과 책임을 가져야 한다. 역할이 중복되면 갈등이 생기기 쉽다. 모든 사람이 각자의 영역에서 최고가 되어야 한다.",
+                        "<strong>시간을 함께 보내는 집단:</strong> 훌륭한 회사는 단순한 직장이 아니라, 사람들이 함께 오랜 시간을 보내고 싶어 하는 곳이다. 강력한 유대감과 문화는 외부의 위협으로부터 회사를 지키는 힘이 된다.",
+                        "<strong>컬트와 같은 문화:</strong> 외부에서 보기엔 이상할 정도로 독특하고 강한 문화를 만드는 것이 좋다. 이는 팀의 결속력을 높이고 정체성을 부여한다."
+                    ]
+                },
+                secrets: {
+                    title: "비밀: 남들이 보지 못하는 기회를 찾아라",
+                    points: [
+                        "<strong>세상에는 비밀이 있는가?:</strong> 대부분의 사람들은 세상의 모든 것이 이미 발견되었다고 생각하지만, 이는 사실이 아니다. 아직 해결되지 않은 중요한 문제들이 '비밀'의 형태로 남아있다.",
+                        "<strong>비밀을 찾는 방법:</strong> 남들이 보지 않는 곳을 봐야 한다. 모두가 동의하는 통념에 의문을 제기하고, 아직 연구되지 않은 분야를 파고들어야 한다. 자연에 대한 비밀, 사람에 대한 비밀이 있다.",
+                        "<strong>비밀과 회사:</strong> 성공적인 회사는 남들이 모르는 비밀을 발견하고 그 위에 세워진다. 이 비밀이 바로 회사의 핵심 경쟁력이자 존재 이유가 된다.",
+                        "<strong>비밀을 공유하라:</strong> 좋은 비밀을 발견했다면, 혼자만 간직해서는 안 된다. 신뢰할 수 있는 사람들과 공유하고 함께 회사를 만들어나가야 한다."
+                    ]
+                }
+            };
+            
+            function updateDiagramContent(contentKey) {
+                const content = contents[contentKey];
+                let html = `<h3 class="text-2xl font-bold mb-4 text-stone-700">${content.title}</h3>`;
+                html += '<ul class="space-y-3 list-disc pl-5 text-stone-600">';
+                content.points.forEach(point => {
+                    html += `<li>${point}</li>`;
+                });
+                html += '</ul>';
+                diagramContentEl.innerHTML = html;
+
+                document.querySelectorAll('.diagram-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                document.querySelector(`.diagram-item[data-content="${contentKey}"]`).classList.add('active');
+            }
+
+            diagramControls.addEventListener('click', function(e) {
+                const targetItem = e.target.closest('.diagram-item');
+                if (targetItem) {
+                    const contentKey = targetItem.dataset.content;
+                    updateDiagramContent(contentKey);
+                }
+            });
+            
+            updateDiagramContent('foundations');
+
+            const ctx = document.getElementById('distributionChart').getContext('2d');
+            let distributionChart;
+
+            const chartData = {
+                consumer: {
+                    labels: ['광고', '바이럴 마케팅', '영업'],
+                    datasets: [{
+                        label: '고객 생애 가치 (LTV)',
+                        data: [100, 200, 0],
+                        backgroundColor: 'rgba(13, 148, 136, 0.6)',
+                        borderColor: 'rgba(13, 148, 136, 1)',
+                        borderWidth: 1
+                    }, {
+                        label: '고객 획득 비용 (CAC)',
+                        data: [20, 5, 0],
+                        backgroundColor: 'rgba(244, 63, 94, 0.6)',
+                        borderColor: 'rgba(244, 63, 94, 1)',
+                        borderWidth: 1
+                    }],
+                    description: "소비자 상품은 LTV가 낮아 광고, 바이럴 등 한 번에 많은 고객에게 도달하는 대중 마케팅이 효과적입니다. 비싼 인적 영업은 적합하지 않습니다."
+                },
+                b2b: {
+                    labels: ['복합 영업', '인적 영업', '마케팅'],
+                    datasets: [{
+                        label: '고객 생애 가치 (LTV)',
+                        data: [1000000, 10000, 1000],
+                        backgroundColor: 'rgba(13, 148, 136, 0.6)',
+                        borderColor: 'rgba(13, 148, 136, 1)',
+                        borderWidth: 1
+                    }, {
+                        label: '고객 획득 비용 (CAC)',
+                        data: [100000, 1000, 100],
+                        backgroundColor: 'rgba(244, 63, 94, 0.6)',
+                        borderColor: 'rgba(244, 63, 94, 1)',
+                        borderWidth: 1
+                    }],
+                    description: "기업용 솔루션은 LTV가 높아 복잡하고 비용이 많이 드는 인적 영업이 가능하며, 이것이 핵심 분배 채널이 됩니다. LTV가 높은 계약일수록 더 많은 영업 비용을 감당할 수 있습니다."
+                }
+            };
+
+            function createOrUpdateChart(dataKey) {
+                const data = chartData[dataKey];
+                document.getElementById('chart-description').textContent = data.description;
+
+                if (distributionChart) {
+                    distributionChart.data.labels = data.labels;
+                    distributionChart.data.datasets = data.datasets;
+                    distributionChart.update();
+                } else {
+                    distributionChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: data.labels,
+                            datasets: data.datasets
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    type: 'logarithmic',
+                                    ticks: {
+                                        callback: function(value, index, values) {
+                                            return Number(value.toString()) + ' $';
+                                        }
+                                    }
+                                }
+                            },
+                            plugins: {
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            let label = context.dataset.label || '';
+                                            if (label) {
+                                                label += ': ';
+                                            }
+                                            if (context.parsed.y !== null) {
+                                                label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed.y);
+                                            }
+                                            return label;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+
+            const consumerBtn = document.getElementById('consumer-btn');
+            const b2bBtn = document.getElementById('b2b-btn');
+
+            consumerBtn.addEventListener('click', () => {
+                createOrUpdateChart('consumer');
+                consumerBtn.classList.add('bg-teal-500', 'text-white');
+                consumerBtn.classList.remove('bg-gray-300', 'text-stone-700');
+                b2bBtn.classList.add('bg-gray-300', 'text-stone-700');
+                b2bBtn.classList.remove('bg-teal-500', 'text-white');
+            });
+
+            b2bBtn.addEventListener('click', () => {
+                createOrUpdateChart('b2b');
+                b2bBtn.classList.add('bg-teal-500', 'text-white');
+                b2bBtn.classList.remove('bg-gray-300', 'text-stone-700');
+                consumerBtn.classList.add('bg-gray-300', 'text-stone-700');
+                consumerBtn.classList.remove('bg-teal-500', 'text-white');
+            });
+            
+            createOrUpdateChart('consumer');
+            
+            const sections = document.querySelectorAll('main section');
+            const navLinks = document.querySelectorAll('header nav a');
+
+            const observerOptions = {
+                root: null,
+                rootMargin: '0px',
+                threshold: 0.4
+            };
+
+            const observer = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const id = entry.target.getAttribute('id');
+                        navLinks.forEach(link => {
+                            link.classList.remove('active-nav');
+                            link.classList.add('inactive-nav');
+                            if (link.getAttribute('href') === `#${id}`) {
+                                link.classList.add('active-nav');
+                                link.classList.remove('inactive-nav');
+                            }
+                        });
+                    }
+                });
+            }, observerOptions);
+
+            sections.forEach(section => {
+                observer.observe(section);
+            });
+        });
+    </script>
+</body>
+</html>
